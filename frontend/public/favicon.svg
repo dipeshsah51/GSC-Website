@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7d070"/>
+      <stop offset="50%" stop-color="#d7a928"/>
+      <stop offset="100%" stop-color="#b8860b"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#071727"/>
+      <stop offset="100%" stop-color="#0f263e"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bgGrad)"/>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="url(#goldGrad)" stroke-width="2.5" opacity="0.9"/>
+  <!-- Stylized G Monogram -->
+  <path d="M44 24.5C41.8 20.5 37.2 18 32 18C23.7 18 17 24.3 17 32C17 39.7 23.7 46 32 46C39.5 46 44.8 41.2 45.8 34.5H32V29.5H51C51.5 31.2 51.8 33 51.8 35C50.8 45 42.5 51.5 32 51.5C20.5 51.5 11 42.8 11 32C11 21.2 20.5 12.5 32 12.5C39.2 12.5 45.4 16.2 48.8 22L44 24.5Z" fill="url(#goldGrad)"/>
+</svg>

@@ -1,0 +1,459 @@
+/* =========================================================
+   GSC HEADER & NAVIGATION
+   ========================================================= */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 18px rgba(7, 23, 39, 0.06);
+}
+
+.site-header.is-scrolled {
+  box-shadow: 0 8px 30px rgba(7, 23, 39, 0.12);
+}
+
+/* =========================================================
+   TOP INFORMATION BAR
+   ========================================================= */
+
+.top-bar {
+  background: #061524;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(215, 169, 40, 0.15);
+  font-size: 12.5px;
+}
+
+.top-bar-inner {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.top-info {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.top-info-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.top-info-link svg {
+  color: #d7a928;
+}
+
+.top-info-link:hover {
+  color: #ffffff;
+}
+
+.top-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.top-location svg {
+  color: #d7a928;
+}
+
+.top-right-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.badge-qatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.qatar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  display: inline-block;
+}
+
+.top-whatsapp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(37, 211, 102, 0.15);
+  color: #25d366;
+  border: 1px solid rgba(37, 211, 102, 0.35);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.top-whatsapp-link:hover {
+  background: #25d366;
+  color: #ffffff;
+}
+
+/* =========================================================
+   MAIN HEADER
+   ========================================================= */
+
+.main-header {
+  position: relative;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.header-inner {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.logo-shield {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #071727, #0f2b48);
+  border: 2px solid #d7a928;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(7, 23, 39, 0.2);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover .logo-shield {
+  transform: scale(1.04);
+}
+
+.logo-letter {
+  color: #d7a928;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logo-main strong {
+  color: #071727;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+.logo-tag {
+  background: #d7a928;
+  color: #071727;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.logo-text small {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   NAVIGATION LINKS
+   ========================================================= */
+
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-items {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 82px;
+  padding: 0 13px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #071727;
+}
+
+.nav-link.active {
+  color: #071727;
+}
+
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  background: linear-gradient(90deg, #d7a928, #f5d061);
+  border-radius: 3px 3px 0 0;
+}
+
+/* =========================================================
+   QUOTE BUTTON
+   ========================================================= */
+
+.quote-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  background: linear-gradient(135deg, #fce08b 0%, #d7a928 50%, #b8860b 100%);
+  color: #071727;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 16px rgba(215, 169, 40, 0.28);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quote-button:hover {
+  background: linear-gradient(135deg, #fff0a8 0%, #e2b43b 50%, #c49216 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(215, 169, 40, 0.4);
+  color: #071727;
+}
+
+.quote-button svg {
+  transition: transform 0.2s ease;
+}
+
+.quote-button:hover svg {
+  transform: translateX(3px);
+}
+
+/* =========================================================
+   MOBILE CONTACT DRAWER BAR (Hidden on desktop)
+   ========================================================= */
+
+.mobile-contact-bar {
+  display: none;
+}
+
+.mobile-menu-button {
+  display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #071727;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* =========================================================
+   TABLET RESPONSIVENESS
+   ========================================================= */
+
+@media (max-width: 1180px) {
+  .header-inner {
+    gap: 16px;
+  }
+  .nav-link {
+    padding: 0 9px;
+    font-size: 12.5px;
+  }
+  .quote-button {
+    padding: 0 15px;
+    font-size: 12px;
+  }
+}
+
+/* =========================================================
+   MOBILE RESPONSIVENESS
+   ========================================================= */
+
+@media (max-width: 950px) {
+  .top-location {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .top-bar {
+    display: none;
+  }
+
+  .header-inner {
+    min-height: 72px;
+  }
+
+  .mobile-menu-button {
+    display: flex;
+  }
+
+  .desktop-nav {
+    position: absolute;
+    top: 72px;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    background: #ffffff;
+    padding: 16px 22px 28px;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 20px 45px rgba(7, 23, 39, 0.15);
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
+  }
+
+  .desktop-nav.mobile-open {
+    display: flex;
+    animation: slideDown 0.25s ease-out;
+  }
+
+  .nav-items {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .nav-link {
+    height: 48px;
+    padding: 0 8px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14.5px;
+  }
+
+  .nav-link.active {
+    color: #b8860b;
+  }
+
+  .nav-link.active::after {
+    display: none;
+  }
+
+  .nav-actions {
+    margin-top: 18px;
+  }
+
+  .quote-button {
+    width: 100%;
+    min-height: 48px;
+    font-size: 13.5px;
+  }
+
+  .mobile-contact-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .mobile-phone-btn,
+  .mobile-wa-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mobile-phone-btn {
+    background: #f1f5f9;
+    color: #071727;
+  }
+
+  .mobile-wa-btn {
+    background: #e6f9ed;
+    color: #16a34a;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
