@@ -1356,17 +1356,17 @@ function AdminPortal() {
                   ● {healthInfo?.status === "ok" ? "Operational (Healthy)" : "Checking..."}
                 </div>
                 <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "4px" }}>
-                  Endpoint: http://localhost:5000/api
+                  Endpoint: {healthInfo?.endpoint || (typeof window !== "undefined" ? window.location.origin + "/api" : "/api")}
                 </div>
               </div>
 
               <div style={{ padding: "18px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <div style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: "600" }}>DATABASE ENGINE</div>
                 <div style={{ fontSize: "1.1rem", fontWeight: "700", color: "#071727", marginTop: "4px" }}>
-                  {healthInfo?.database?.status || "Local Resilient Storage (Active)"}
+                  {healthInfo?.database?.status || "Active"}
                 </div>
                 <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "4px" }}>
-                  MongoDB URI: 127.0.0.1:27017
+                  Engine: {healthInfo?.database?.engine || "MySQL / Server Database"}
                 </div>
               </div>
 
@@ -1376,7 +1376,7 @@ function AdminPortal() {
                   {healthInfo?.uptime || "Running"}
                 </div>
                 <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "4px" }}>
-                  System: {healthInfo?.system || "GSC Doha API Node.js Service"}
+                  System: {healthInfo?.system || healthInfo?.engine || "GSC Doha API Service"}
                 </div>
               </div>
             </div>

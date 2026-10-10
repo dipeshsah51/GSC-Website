@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Allow API requests to pass to the /api directory
+  RewriteRule ^api/ - [L]
+
+  # 2. Serve existing files and directories directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 3. Rewrite all other SPA routes to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Cache headers for static assets
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|jpg|jpeg|png|gif|svg|webp|ico|woff|woff2)$">
+    Header set Cache-Control "max-age=2592000, public"
+  </FilesMatch>
+</IfModule>

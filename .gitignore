@@ -41,3 +41,7 @@ scratch_edge_profile/
 backend/uploads/*
 !backend/uploads/.gitkeep
 backend/data/
+
+# Deployment output
+htdocs/
+*.zip
