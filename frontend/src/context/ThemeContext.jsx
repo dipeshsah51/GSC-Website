@@ -3,36 +3,26 @@ import { createContext, useContext, useState, useEffect } from "react";
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    try {
-      const saved = localStorage.getItem("gsc_theme");
-      if (saved) return saved;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    } catch {
-      return "light";
-    }
-  });
+  // Always default to clean, high-contrast, corporate light theme
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
     try {
-      document.documentElement.setAttribute("data-theme", theme);
-      if (theme === "dark") {
-        document.body.classList.add("dark-theme");
-      } else {
-        document.body.classList.remove("dark-theme");
-      }
-      localStorage.setItem("gsc_theme", theme);
+      // Force clean light theme and clear any stale dark setting
+      document.documentElement.setAttribute("data-theme", "light");
+      document.body.classList.remove("dark-theme");
+      localStorage.setItem("gsc_theme", "light");
     } catch (e) {
       console.warn("Theme storage error:", e);
     }
-  }, [theme]);
+  }, []);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme("light");
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
+    <ThemeContext.Provider value={{ theme: "light", toggleTheme, isDark: false }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -43,8 +33,8 @@ export function useTheme() {
   if (!context) {
     return {
       theme: "light",
-      isDark: false,
       toggleTheme: () => {},
+      isDark: false,
     };
   }
   return context;

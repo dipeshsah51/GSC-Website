@@ -349,18 +349,19 @@
 
 .quick-info-card span {
   display: block;
-  font-size: 0.76rem;
-  color: var(--text-light);
+  font-size: 0.78rem;
+  color: #64748b;
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  margin-bottom: 3px;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
 }
 
 .quick-info-card strong {
   display: block;
-  font-size: 0.92rem;
-  color: var(--primary-navy);
+  font-size: 0.95rem;
+  color: #071727;
+  font-weight: 800;
   line-height: 1.35;
 }
 
@@ -460,12 +461,26 @@
   height: 34%;
 }
 
+.about-content h2 {
+  color: #071727;
+  font-size: 2.35rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
 .about-content .lead-text {
   font-size: 1.05rem;
-  color: var(--primary-navy);
-  font-weight: 500;
+  color: #1e293b;
+  font-weight: 600;
   line-height: 1.7;
   margin: 18px 0 14px;
+}
+
+.about-content p {
+  color: #334155;
+  font-size: 0.96rem;
+  line-height: 1.7;
 }
 
 .about-points {
@@ -489,14 +504,15 @@
 
 .about-point strong {
   display: block;
-  font-size: 0.96rem;
-  color: var(--primary-navy);
+  font-size: 0.98rem;
+  color: #071727;
+  font-weight: 700;
   margin-bottom: 2px;
 }
 
 .about-point span {
-  font-size: 0.88rem;
-  color: var(--text-muted);
+  font-size: 0.9rem;
+  color: #475569;
 }
 
 .about-actions {
