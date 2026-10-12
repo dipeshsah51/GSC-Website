@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Menu, X, Phone, Mail, MapPin, MessageCircle, ArrowRight } from "lucide-react";
+import {
+  Menu,
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  MessageCircle,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react";
 import { companyInfo } from "../../data/websiteData";
 import "./Header.css";
 
@@ -107,6 +116,18 @@ function Header() {
             </div>
 
             <div className="nav-actions">
+              {/* Admin Button */}
+              <Link
+                to="/admin"
+                className="header-admin-btn"
+                onClick={closeMenu}
+                title="Operations Admin Portal"
+              >
+                <ShieldCheck size={16} />
+                <span>Admin</span>
+              </Link>
+
+              {/* Request Quote Primary Action */}
               <Link
                 to="/request-quote"
                 className="quote-button"
@@ -135,15 +156,17 @@ function Header() {
             </div>
           </nav>
 
-          {/* Mobile menu hamburger button */}
-          <button
-            className={`mobile-menu-button ${menuOpen ? "is-active" : ""}`}
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
+          {/* Right Mobile Actions (Menu Hamburger) */}
+          <div className="mobile-header-right">
+            <button
+              className={`mobile-menu-button ${menuOpen ? "is-active" : ""}`}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
+          </div>
         </div>
       </div>
     </header>

@@ -299,6 +299,63 @@
    MOBILE CONTACT DRAWER BAR (Hidden on desktop)
    ========================================================= */
 
+/* =========================================================
+   NAVIGATION ACTIONS
+   ========================================================= */
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* =========================================================
+   ADMIN BUTTON (DESKTOP)
+   ========================================================= */
+
+.header-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(7, 23, 39, 0.12);
+  background: #ffffff;
+  color: #071727;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.header-admin-btn svg {
+  color: #b8860b;
+  transition: color 0.2s ease;
+}
+
+.header-admin-btn:hover {
+  background: #071727;
+  color: #ffffff;
+  border-color: #071727;
+  transform: translateY(-1px);
+}
+
+.header-admin-btn:hover svg {
+  color: #fce08b;
+}
+
+/* =========================================================
+   MOBILE CONTACT DRAWER BAR (Hidden on desktop)
+   ========================================================= */
+
+.mobile-header-right {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
 .mobile-contact-bar {
   display: none;
 }
@@ -328,14 +385,18 @@
 
 @media (max-width: 1180px) {
   .header-inner {
-    gap: 16px;
+    gap: 14px;
   }
   .nav-link {
-    padding: 0 9px;
+    padding: 0 8px;
     font-size: 12.5px;
   }
   .quote-button {
-    padding: 0 15px;
+    padding: 0 14px;
+    font-size: 12px;
+  }
+  .header-admin-btn {
+    padding: 0 10px;
     font-size: 12px;
   }
 }
@@ -357,6 +418,10 @@
 
   .header-inner {
     min-height: 72px;
+  }
+
+  .mobile-header-right {
+    display: flex;
   }
 
   .mobile-menu-button {
@@ -407,6 +472,14 @@
 
   .nav-actions {
     margin-top: 18px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-admin-btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
   }
 
   .quote-button {

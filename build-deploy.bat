@@ -27,6 +27,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Copy-Item -Force 'server-php/db.php' 'htdocs/api/db.php'; " ^
   "Copy-Item -Force 'server-php/jwt.php' 'htdocs/api/jwt.php'; " ^
   "Copy-Item -Force 'server-php/index.php' 'htdocs/api/index.php'; " ^
+  "Copy-Item -Force 'server-php/setup.php' 'htdocs/api/setup.php'; " ^
   "Copy-Item -Force 'server-php/.htaccess' 'htdocs/api/.htaccess'; " ^
   "Copy-Item -Force 'server-php/database.sql' 'htdocs/api/database.sql';"
 

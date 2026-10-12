@@ -2,20 +2,29 @@
   RewriteEngine On
   RewriteBase /
 
-  # 1. Allow API requests to pass to the /api directory
+  # 1. Force HTTPS for all requests
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # 2. Allow API requests to pass to the /api directory
   RewriteRule ^api/ - [L]
 
-  # 2. Serve existing files and directories directly
+  # 3. Serve existing files and directories directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 3. Rewrite all other SPA routes to index.html
+  # 4. Rewrite all other SPA routes to index.html
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# Cache headers for static assets
+# Security Headers & Cache Controls
 <IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+
   <FilesMatch "\.(js|css|jpg|jpeg|png|gif|svg|webp|ico|woff|woff2)$">
     Header set Cache-Control "max-age=2592000, public"
   </FilesMatch>

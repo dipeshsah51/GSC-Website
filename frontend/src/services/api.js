@@ -131,11 +131,31 @@ export const loginAdmin = async (email, password) => {
 };
 
 /**
+ * Change Admin Password / Profile
+ */
+export const updateAdminPassword = async (token, passwordData) => {
+  const res = await fetch(`${API_BASE_URL}/auth/change-password?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ...passwordData, token }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to update admin password");
+  }
+  return data;
+};
+
+/**
  * Get all Quotes (Admin)
  */
 export const getAdminQuotes = async (token, params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_BASE_URL}/quotes${query ? `?${query}` : ""}`, {
+  const qParams = new URLSearchParams({ ...params, token });
+  const res = await fetch(`${API_BASE_URL}/quotes?${qParams.toString()}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -154,13 +174,13 @@ export const getAdminQuotes = async (token, params = {}) => {
  * Update Quote Status & Notes (Admin)
  */
 export const updateQuoteStatus = async (token, id, updateData) => {
-  const res = await fetch(`${API_BASE_URL}/quotes/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/quotes/${id}?token=${encodeURIComponent(token)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(updateData),
+    body: JSON.stringify({ ...updateData, token }),
   });
 
   const data = await res.json();
@@ -174,7 +194,7 @@ export const updateQuoteStatus = async (token, id, updateData) => {
  * Delete Quote (Admin)
  */
 export const deleteQuote = async (token, id) => {
-  const res = await fetch(`${API_BASE_URL}/quotes/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/quotes/${id}?token=${encodeURIComponent(token)}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -192,8 +212,8 @@ export const deleteQuote = async (token, id) => {
  * Get all Contact Messages (Admin)
  */
 export const getAdminContacts = async (token, params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_BASE_URL}/contacts${query ? `?${query}` : ""}`, {
+  const qParams = new URLSearchParams({ ...params, token });
+  const res = await fetch(`${API_BASE_URL}/contacts?${qParams.toString()}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -212,13 +232,13 @@ export const getAdminContacts = async (token, params = {}) => {
  * Update Contact Message Status (Admin)
  */
 export const updateContactStatus = async (token, id, status) => {
-  const res = await fetch(`${API_BASE_URL}/contacts/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/contacts/${id}?token=${encodeURIComponent(token)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, token }),
   });
 
   const data = await res.json();
@@ -232,7 +252,7 @@ export const updateContactStatus = async (token, id, status) => {
  * Delete Contact Message (Admin)
  */
 export const deleteContact = async (token, id) => {
-  const res = await fetch(`${API_BASE_URL}/contacts/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/contacts/${id}?token=${encodeURIComponent(token)}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -245,3 +265,221 @@ export const deleteContact = async (token, id) => {
   }
   return data;
 };
+
+/**
+ * Get Accounting & Operations Summary (Admin)
+ */
+export const getAccountingSummary = async (token) => {
+  const res = await fetch(`${API_BASE_URL}/accounting/summary?token=${encodeURIComponent(token)}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch accounting summary");
+  }
+  return data.summary;
+};
+
+/**
+ * Get Payments List (Admin)
+ */
+export const getPayments = async (token, params = {}) => {
+  const qParams = new URLSearchParams({ ...params, token });
+  const res = await fetch(`${API_BASE_URL}/payments?${qParams.toString()}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch payments");
+  }
+  return data.payments || [];
+};
+
+/**
+ * Create Payment / Invoice (Admin)
+ */
+export const createPayment = async (token, paymentData) => {
+  const res = await fetch(`${API_BASE_URL}/payments?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ...paymentData, token }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to create payment record");
+  }
+  return data.payment;
+};
+
+/**
+ * Update Payment Status or Details (Admin)
+ */
+export const updatePayment = async (token, id, updateData) => {
+  const res = await fetch(`${API_BASE_URL}/payments/${id}?token=${encodeURIComponent(token)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ...updateData, token }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to update payment");
+  }
+  return data.payment;
+};
+
+/**
+ * Delete Payment Record (Admin)
+ */
+export const deletePayment = async (token, id) => {
+  const res = await fetch(`${API_BASE_URL}/payments/${id}?token=${encodeURIComponent(token)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to delete payment");
+  }
+  return data;
+};
+
+/**
+ * Get Works / Projects List (Admin)
+ */
+export const getWorks = async (token, params = {}) => {
+  const qParams = new URLSearchParams({ ...params, token });
+  const res = await fetch(`${API_BASE_URL}/works?${qParams.toString()}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch work orders");
+  }
+  return data.works || [];
+};
+
+/**
+ * Create Work Order / Project (Admin)
+ */
+export const createWork = async (token, workData) => {
+  const res = await fetch(`${API_BASE_URL}/works?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ...workData, token }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to create work order");
+  }
+  return data.work;
+};
+
+/**
+ * Update Work Order Status / Details (Admin)
+ */
+export const updateWork = async (token, id, updateData) => {
+  const res = await fetch(`${API_BASE_URL}/works/${id}?token=${encodeURIComponent(token)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ...updateData, token }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to update work order");
+  }
+  return data.work;
+};
+
+/**
+ * Delete Work Order (Admin)
+ */
+export const deleteWork = async (token, id) => {
+  const res = await fetch(`${API_BASE_URL}/works/${id}?token=${encodeURIComponent(token)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to delete work order");
+  }
+  return data;
+};
+
+/**
+ * Purge Seed/Mock Accounting & Work Data (Admin)
+ */
+export const purgeDummyAccounting = async (token, all = false) => {
+  const res = await fetch(`${API_BASE_URL}/accounting/purge-dummy?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ token, all }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to purge dummy records");
+  }
+  return data;
+};
+
+/**
+ * Create Manual Completed Work & Accounting Entry (Admin)
+ * Automatically calculates price, discount, transport, expenses, profit
+ * and inserts both work order & payment voucher into database.
+ */
+export const createManualWorkEntry = async (token, entryData) => {
+  const res = await fetch(`${API_BASE_URL}/accounting/manual-entry?token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ ...entryData, token }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to record manual work & accounting entry");
+  }
+  return data;
+};
+

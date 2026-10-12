@@ -3,23 +3,23 @@
  * Genting Services & Contracting W.L.L. (Doha, Qatar)
  * Production Server & Database Configuration for gscqa.loveslife.biz
  *
- * For InfinityFree / cPanel:
- * Fill in your MySQL details from your hosting Control Panel -> MySQL Databases
+ * Hosting Account: if0_43086816 (InfinityFree)
+ * Home Directory: /home/vol15_1/infinityfree.com/if0_43086816
  */
 
-// Database Host (e.g. sql100.infinityfree.com or localhost)
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+// MySQL Hostname (Live InfinityFree Server)
+define('DB_HOST', getenv('DB_HOST') ?: 'sql113.infinityfree.com');
 
-// Database Name (e.g. if0_XXXXXXXX_gsc)
-define('DB_NAME', getenv('DB_NAME') ?: 'gsc_website_db');
+// MySQL Database Name (Created and active)
+define('DB_NAME', getenv('DB_NAME') ?: 'if0_43086816_gsc');
 
-// Database Username (e.g. if0_XXXXXXXX)
-define('DB_USER', getenv('DB_USER') ?: 'root');
+// MySQL Username (Your InfinityFree account username)
+define('DB_USER', getenv('DB_USER') ?: 'if0_43086816');
 
-// Database Password (your hosting vPanel / MySQL password)
-define('DB_PASS', getenv('DB_PASS') ?: '');
+// MySQL Password (Your InfinityFree account password)
+define('DB_PASS', getenv('DB_PASS') ?: 'Saah8080');
 
-// Database Port
+// MySQL Port
 define('DB_PORT', getenv('DB_PORT') ?: '3306');
 
 // Secret Key for Admin Authentication JWT
@@ -29,5 +29,5 @@ define('JWT_SECRET', getenv('JWT_SECRET') ?: 'gsc_qatar_jwt_super_secret_key_202
 define('DEFAULT_ADMIN_EMAIL', 'admin@gsc-qatar.com');
 define('DEFAULT_ADMIN_PASS', 'admin123456');
 
-// Timezone
+// Timezone (Qatar Time GMT+3)
 date_default_timezone_set('Asia/Qatar');

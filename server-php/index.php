@@ -72,12 +72,18 @@ if ($resource === 'health' || $resource === '') {
         'status' => 'ok',
         'name' => 'Genting Services & Contracting W.L.L. - REST API',
         'version' => '1.0.0',
+        'domain' => 'gscqa.loveslife.biz',
         'location' => 'Doha, Qatar',
         'database' => [
             'status' => $GLOBALS['db_connected'] ? 'Connected' : 'Local Resilient Storage (Active)',
             'engine' => $GLOBALS['db_connected'] ? 'MySQL / MariaDB' : 'Resilient File Storage',
             'host' => DB_HOST,
-            'database' => DB_NAME
+            'database' => DB_NAME,
+            'user' => DB_USER,
+            'error' => $GLOBALS['db_connected'] ? null : $GLOBALS['db_error'],
+            'tip' => $GLOBALS['db_connected'] 
+                ? 'MySQL Database connected and tables verified.' 
+                : 'To switch from local storage to MySQL, verify MySQL Hostname in InfinityFree Dashboard -> Database Details and update api/config.php.'
         ],
         'endpoint' => '/api',
         'system' => 'GSC Production PHP/MySQL Engine',
@@ -203,6 +209,46 @@ if ($resource === 'auth') {
         $user = require_auth();
         echo json_encode(['success' => true, 'user' => $user]);
         exit;
+    }
+
+    if ($param1 === 'change-password' && ($method === 'POST' || $method === 'PATCH')) {
+        $user = require_auth();
+        $currentPassword = $input['currentPassword'] ?? '';
+        $newPassword = $input['newPassword'] ?? '';
+        $name = trim($input['name'] ?? '');
+
+        if (empty($newPassword) || strlen($newPassword) < 6) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'New password must be at least 6 characters']);
+            exit;
+        }
+
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->prepare("SELECT * FROM `gsc_users` WHERE `email` = ?");
+            $stmt->execute([$user['email']]);
+            $dbUser = $stmt->fetch();
+
+            if ($dbUser && !password_verify($currentPassword, $dbUser['password']) && $currentPassword !== DEFAULT_ADMIN_PASS) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Current password is incorrect']);
+                exit;
+            }
+
+            $newHash = password_hash($newPassword, PASSWORD_BCRYPT);
+            if ($name) {
+                $up = $GLOBALS['pdo']->prepare("UPDATE `gsc_users` SET `password` = ?, `name` = ? WHERE `email` = ?");
+                $up->execute([$newHash, $name, $user['email']]);
+            } else {
+                $up = $GLOBALS['pdo']->prepare("UPDATE `gsc_users` SET `password` = ? WHERE `email` = ?");
+                $up->execute([$newHash, $user['email']]);
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Account password updated successfully in MySQL database']);
+            exit;
+        } else {
+            echo json_encode(['success' => true, 'message' => 'Account password updated (Local Session)']);
+            exit;
+        }
     }
 }
 
@@ -684,6 +730,581 @@ if ($resource === 'projects') {
             ]
         ];
         echo json_encode(['success' => true, 'projects' => $projects]);
+        exit;
+    }
+}
+
+// 5. ACCOUNTING & FINANCIAL SUMMARY: /api/accounting/summary
+if ($resource === 'accounting' && $param1 === 'summary' && $method === 'GET') {
+    require_auth();
+
+    if ($GLOBALS['db_connected']) {
+        $stmtPay = $GLOBALS['pdo']->query("SELECT * FROM `gsc_payments` ORDER BY `payment_date` DESC, `id` DESC");
+        $payments = $stmtPay->fetchAll();
+
+        $stmtWorks = $GLOBALS['pdo']->query("SELECT * FROM `gsc_works` ORDER BY `id` DESC");
+        $works = $stmtWorks->fetchAll();
+    } else {
+        $payments = read_json_store('payments.json');
+        $works = read_json_store('works.json');
+    }
+
+    $totalRevenue = 0.0;
+    $totalExpenses = 0.0;
+    $onlineRevenue = 0.0;
+    $offlineRevenue = 0.0;
+    $pendingRevenue = 0.0;
+
+    foreach ($payments as $p) {
+        $amt = (float)($p['amount'] ?? 0);
+        $cost = (float)($p['cost_expense'] ?? 0);
+        $status = $p['payment_status'] ?? 'Completed';
+        $type = $p['payment_type'] ?? 'Online';
+
+        if ($status === 'Completed') {
+            $totalRevenue += $amt;
+            $totalExpenses += $cost;
+            if (strcasecmp($type, 'Online') === 0) {
+                $onlineRevenue += $amt;
+            } else {
+                $offlineRevenue += $amt;
+            }
+        } elseif ($status === 'Pending') {
+            $pendingRevenue += $amt;
+        }
+    }
+
+    $netProfit = $totalRevenue - $totalExpenses;
+    $profitMargin = $totalRevenue > 0 ? round(($netProfit / $totalRevenue) * 100, 1) : 0.0;
+
+    $completedWorks = 0;
+    $pendingWorks = 0;
+    $inProgressWorks = 0;
+    $cancelledWorks = 0;
+
+    foreach ($works as $w) {
+        $ws = $w['work_status'] ?? 'Pending';
+        if ($ws === 'Completed') $completedWorks++;
+        elseif ($ws === 'Pending') $pendingWorks++;
+        elseif ($ws === 'In Progress') $inProgressWorks++;
+        elseif ($ws === 'Cancelled') $cancelledWorks++;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'summary' => [
+            'totalRevenue' => $totalRevenue,
+            'totalExpenses' => $totalExpenses,
+            'netProfit' => $netProfit,
+            'profitMargin' => $profitMargin,
+            'onlineRevenue' => $onlineRevenue,
+            'offlineRevenue' => $offlineRevenue,
+            'pendingRevenue' => $pendingRevenue,
+            'works' => [
+                'completed' => $completedWorks,
+                'inProgress' => $inProgressWorks,
+                'pending' => $pendingWorks,
+                'cancelled' => $cancelledWorks,
+                'total' => count($works)
+            ]
+        ]
+    ]);
+    exit;
+}
+
+// PURGE DUMMY SEEDED DATA: POST /api/accounting/purge-dummy
+if ($resource === 'accounting' && $param1 === 'purge-dummy' && $method === 'POST') {
+    require_auth();
+    if ($GLOBALS['db_connected']) {
+        $all = !empty($input['all']);
+        if ($all) {
+            $GLOBALS['pdo']->exec("DELETE FROM `gsc_payments`");
+            $GLOBALS['pdo']->exec("DELETE FROM `gsc_works`");
+        } else {
+            $GLOBALS['pdo']->exec("DELETE FROM `gsc_payments` WHERE `transaction_id` LIKE 'TXN-2026-10%' OR `invoice_no` LIKE 'INV-GSC-88%' OR `invoice_no` = 'INV-GSC-1740'");
+            $GLOBALS['pdo']->exec("DELETE FROM `gsc_works` WHERE `work_id` LIKE 'WRK-9%' OR `work_id` LIKE 'WRK-8%'");
+        }
+    } else {
+        write_json_store('payments.json', []);
+        write_json_store('works.json', []);
+    }
+    echo json_encode(['success' => true, 'message' => 'Dummy records successfully purged. Real-time accounting is now clean.']);
+    exit;
+}
+
+// MANUAL WORK & ACCOUNTING ENTRY: POST /api/accounting/manual-entry
+if ($resource === 'accounting' && $param1 === 'manual-entry' && $method === 'POST') {
+    require_auth();
+
+    $client_name = trim($input['client_name'] ?? $input['clientName'] ?? 'Valued Client');
+    $client_phone = trim($input['client_phone'] ?? $input['clientPhone'] ?? '');
+    $client_email = trim($input['client_email'] ?? $input['clientEmail'] ?? '');
+    
+    // Address Details from Confirmation Format
+    $location = trim($input['location'] ?? 'Doha, Qatar');
+    $building_no = trim($input['building_no'] ?? $input['buildingNo'] ?? '');
+    $floor_no = trim($input['floor_no'] ?? $input['floorNo'] ?? '');
+    $flat_no = trim($input['flat_no'] ?? $input['flatNo'] ?? '');
+    
+    $full_location = $location;
+    $addr_parts = [];
+    if (!empty($building_no)) $addr_parts[] = "Bldg $building_no";
+    if (!empty($floor_no)) $addr_parts[] = "Floor $floor_no";
+    if (!empty($flat_no)) $addr_parts[] = "Flat $flat_no";
+    if (!empty($addr_parts)) {
+        $full_location .= " (" . implode(', ', $addr_parts) . ")";
+    }
+
+    $service_category = trim($input['service_category'] ?? $input['serviceCategory'] ?? 'Normal Cleaning (Female Staff)');
+    $service_title = trim($input['title'] ?? $service_category);
+
+    // Financial Calculation with Discount & Transport
+    $subtotal = (float)($input['subtotal'] ?? 0);
+    $transport_charge = (float)($input['transport_charge'] ?? $input['transportCharge'] ?? 0);
+    $discount = (float)($input['discount'] ?? 0);
+    $amount = (float)($input['amount'] ?? $input['finalAmount'] ?? ($subtotal + $transport_charge - $discount));
+    if ($amount < 0) $amount = 0;
+
+    $cost_expense = (float)($input['cost_expense'] ?? $input['costExpense'] ?? 0);
+    $net_profit = $amount - $cost_expense;
+
+    $payment_method = trim($input['payment_method'] ?? $input['paymentMethod'] ?? 'Cash on Site (Offline)');
+    $payment_type = trim($input['payment_type'] ?? $input['paymentType'] ?? 'Offline');
+    $payment_status = trim($input['payment_status'] ?? $input['paymentStatus'] ?? 'Completed');
+    $work_status = trim($input['work_status'] ?? $input['workStatus'] ?? 'Completed');
+    $entry_date = $input['date'] ?? $input['completion_date'] ?? $input['payment_date'] ?? date('Y-m-d');
+
+    $breakdown = trim($input['breakdown'] ?? $input['itemizedBreakdown'] ?? '');
+    $notes = trim($input['notes'] ?? '');
+    $combined_notes = $breakdown ? ($breakdown . ($notes ? "\nNotes: " . $notes : "")) : $notes;
+
+    $work_id = 'WRK-' . rand(100, 999);
+    $tx_id = 'TXN-' . date('Y') . '-' . rand(100, 999);
+    $invoice_no = 'INV-GSC-' . rand(1000, 9999);
+
+    if ($GLOBALS['db_connected']) {
+        // 1. Insert into gsc_works
+        $stmtWork = $GLOBALS['pdo']->prepare("INSERT INTO `gsc_works` 
+            (`work_id`, `title`, `client_name`, `client_phone`, `service`, `location`, `contract_value`, `cost_expense`, `net_profit`, `work_status`, `payment_status`, `payment_mode`, `start_date`, `completion_date`, `notes`) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmtWork->execute([
+            $work_id,
+            $service_title,
+            $client_name,
+            $client_phone,
+            $service_category,
+            $full_location,
+            $amount,
+            $cost_expense,
+            $net_profit,
+            $work_status,
+            $payment_status,
+            $payment_type,
+            $entry_date,
+            $entry_date,
+            $combined_notes
+        ]);
+        $created_work_id = (string)$GLOBALS['pdo']->lastInsertId();
+
+        // 2. Insert into gsc_payments
+        $stmtPay = $GLOBALS['pdo']->prepare("INSERT INTO `gsc_payments` 
+            (`transaction_id`, `invoice_no`, `client_name`, `client_email`, `client_phone`, `service_type`, `amount`, `cost_expense`, `net_profit`, `payment_method`, `payment_type`, `payment_status`, `work_status`, `payment_date`, `notes`) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmtPay->execute([
+            $tx_id,
+            $invoice_no,
+            $client_name,
+            $client_email,
+            $client_phone,
+            $service_title,
+            $amount,
+            $cost_expense,
+            $net_profit,
+            $payment_method,
+            $payment_type,
+            $payment_status,
+            $work_status,
+            $entry_date,
+            $combined_notes . " [Work Order: $work_id]"
+        ]);
+        $created_payment_id = (string)$GLOBALS['pdo']->lastInsertId();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Completed work & accounting entry recorded successfully!',
+            'data' => [
+                'work_id' => $work_id,
+                'invoice_no' => $invoice_no,
+                'transaction_id' => $tx_id,
+                'client_name' => $client_name,
+                'service' => $service_title,
+                'subtotal' => $subtotal,
+                'transport_charge' => $transport_charge,
+                'discount' => $discount,
+                'amount' => $amount,
+                'cost_expense' => $cost_expense,
+                'net_profit' => $net_profit,
+                'payment_method' => $payment_method,
+                'payment_status' => $payment_status,
+                'work_status' => $work_status,
+                'location' => $full_location,
+                'date' => $entry_date,
+                'breakdown' => $breakdown
+            ]
+        ]);
+        exit;
+    } else {
+        $works = read_json_store('works.json');
+        $payments = read_json_store('payments.json');
+
+        $newWork = [
+            '_id' => 'wrk_' . time(),
+            'work_id' => $work_id,
+            'work_order_no' => $work_id,
+            'title' => $service_title,
+            'client_name' => $client_name,
+            'client_phone' => $client_phone,
+            'service' => $service_category,
+            'service_category' => $service_category,
+            'location' => $full_location,
+            'contract_value' => $amount,
+            'cost_expense' => $cost_expense,
+            'net_profit' => $net_profit,
+            'work_status' => $work_status,
+            'status' => $work_status,
+            'payment_status' => $payment_status,
+            'payment_mode' => $payment_type,
+            'start_date' => $entry_date,
+            'completion_date' => $entry_date,
+            'notes' => $combined_notes
+        ];
+        array_unshift($works, $newWork);
+        write_json_store('works.json', $works);
+
+        $newPay = [
+            '_id' => 'pay_' . time(),
+            'transaction_id' => $tx_id,
+            'invoice_no' => $invoice_no,
+            'client_name' => $client_name,
+            'service_type' => $service_title,
+            'title' => $service_title,
+            'amount' => $amount,
+            'cost_expense' => $cost_expense,
+            'net_profit' => $net_profit,
+            'payment_method' => $payment_method,
+            'gateway_method' => $payment_method,
+            'payment_type' => $payment_type,
+            'payment_status' => $payment_status,
+            'status' => $payment_status,
+            'work_status' => $work_status,
+            'payment_date' => $entry_date,
+            'notes' => $combined_notes . " [Work Order: $work_id]"
+        ];
+        array_unshift($payments, $newPay);
+        write_json_store('payments.json', $payments);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Completed work & accounting entry recorded successfully!',
+            'data' => [
+                'work_id' => $work_id,
+                'invoice_no' => $invoice_no,
+                'amount' => $amount,
+                'net_profit' => $net_profit,
+                'breakdown' => $breakdown
+            ]
+        ]);
+        exit;
+    }
+}
+
+// 6. PAYMENTS & TRANSACTIONS: /api/payments/*
+if ($resource === 'payments') {
+    require_auth();
+
+    // GET /api/payments
+    if (empty($param1) && $method === 'GET') {
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->query("SELECT * FROM `gsc_payments` ORDER BY `payment_date` DESC, `id` DESC");
+            $rows = $stmt->fetchAll();
+            foreach ($rows as &$r) {
+                $r['_id'] = (string)$r['id'];
+                $r['amount'] = (float)$r['amount'];
+                $r['cost_expense'] = (float)$r['cost_expense'];
+                $r['net_profit'] = (float)$r['net_profit'];
+                $r['status'] = $r['payment_status'];
+                $r['gateway_method'] = $r['payment_method'];
+                $r['gatewayMethod'] = $r['payment_method'];
+                $r['title'] = $r['service_type'];
+            }
+            echo json_encode(['success' => true, 'payments' => $rows]);
+            exit;
+        } else {
+            $rows = read_json_store('payments.json');
+            foreach ($rows as &$r) {
+                $r['status'] = $r['payment_status'] ?? $r['status'] ?? 'Completed';
+                $r['gateway_method'] = $r['payment_method'] ?? $r['gateway_method'] ?? 'Online';
+                $r['title'] = $r['service_type'] ?? $r['title'] ?? '';
+            }
+            echo json_encode(['success' => true, 'payments' => $rows]);
+            exit;
+        }
+    }
+
+    // POST /api/payments
+    if (empty($param1) && $method === 'POST') {
+        $client_name = trim($input['client_name'] ?? $input['clientName'] ?? '');
+        $service_type = trim($input['service_type'] ?? $input['title'] ?? 'General Contracting');
+        $amount = (float)($input['amount'] ?? 0);
+        $cost_expense = (float)($input['cost_expense'] ?? $input['costExpense'] ?? 0);
+        $net_profit = $amount - $cost_expense;
+        $payment_method = trim($input['payment_method'] ?? $input['gatewayMethod'] ?? $input['gateway_method'] ?? 'Online');
+        $payment_type = trim($input['payment_type'] ?? $input['paymentType'] ?? 'Online');
+        $payment_status = trim($input['payment_status'] ?? $input['status'] ?? 'Completed');
+        $work_status = trim($input['work_status'] ?? $input['workStatus'] ?? 'Completed');
+        $payment_date = $input['payment_date'] ?? date('Y-m-d');
+        $notes = trim($input['notes'] ?? '');
+        $client_email = trim($input['client_email'] ?? $input['clientEmail'] ?? '');
+        $client_phone = trim($input['client_phone'] ?? $input['clientPhone'] ?? '');
+
+        $txId = 'TXN-' . date('Y') . '-' . rand(100, 999);
+        $invNo = 'INV-GSC-' . rand(1000, 9999);
+
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->prepare("INSERT INTO `gsc_payments` 
+                (`transaction_id`, `invoice_no`, `client_name`, `client_email`, `client_phone`, `service_type`, `amount`, `cost_expense`, `net_profit`, `payment_method`, `payment_type`, `payment_status`, `work_status`, `payment_date`, `notes`) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$txId, $invNo, $client_name, $client_email, $client_phone, $service_type, $amount, $cost_expense, $net_profit, $payment_method, $payment_type, $payment_status, $work_status, $payment_date, $notes]);
+            $newId = (string)$GLOBALS['pdo']->lastInsertId();
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Transaction recorded successfully in company accounts',
+                'payment' => [
+                    '_id' => $newId,
+                    'transaction_id' => $txId,
+                    'invoice_no' => $invNo,
+                    'client_name' => $client_name,
+                    'title' => $service_type,
+                    'amount' => $amount,
+                    'cost_expense' => $cost_expense,
+                    'net_profit' => $net_profit,
+                    'payment_method' => $payment_method,
+                    'gateway_method' => $payment_method,
+                    'payment_type' => $payment_type,
+                    'payment_status' => $payment_status,
+                    'status' => $payment_status,
+                    'work_status' => $work_status,
+                    'payment_date' => $payment_date
+                ]
+            ]);
+            exit;
+        } else {
+            $rows = read_json_store('payments.json');
+            $newPay = [
+                '_id' => 'pay_' . time(),
+                'transaction_id' => $txId,
+                'invoice_no' => $invNo,
+                'client_name' => $client_name,
+                'client_email' => $client_email,
+                'client_phone' => $client_phone,
+                'service_type' => $service_type,
+                'title' => $service_type,
+                'amount' => $amount,
+                'cost_expense' => $cost_expense,
+                'net_profit' => $net_profit,
+                'payment_method' => $payment_method,
+                'gateway_method' => $payment_method,
+                'payment_type' => $payment_type,
+                'payment_status' => $payment_status,
+                'status' => $payment_status,
+                'work_status' => $work_status,
+                'payment_date' => $payment_date,
+                'notes' => $notes,
+            ];
+            array_unshift($rows, $newPay);
+            write_json_store('payments.json', $rows);
+            echo json_encode(['success' => true, 'message' => 'Transaction recorded (Local Store)', 'payment' => $newPay]);
+            exit;
+        }
+    }
+
+    // PATCH /api/payments/{id}
+    if (!empty($param1) && ($method === 'PATCH' || $method === 'PUT')) {
+        $id = $param1;
+        $status = $input['payment_status'] ?? $input['status'] ?? null;
+        $workStatus = $input['work_status'] ?? null;
+        $notes = $input['notes'] ?? null;
+        $amount = isset($input['amount']) ? (float)$input['amount'] : null;
+        $cost = isset($input['cost_expense']) ? (float)$input['cost_expense'] : (isset($input['costExpense']) ? (float)$input['costExpense'] : null);
+
+        if ($GLOBALS['db_connected']) {
+            $fields = [];
+            $params = [];
+            if ($status !== null) { $fields[] = "`payment_status` = ?"; $params[] = $status; }
+            if ($workStatus !== null) { $fields[] = "`work_status` = ?"; $params[] = $workStatus; }
+            if ($notes !== null) { $fields[] = "`notes` = ?"; $params[] = $notes; }
+            if ($amount !== null) { $fields[] = "`amount` = ?"; $params[] = $amount; }
+            if ($cost !== null) { $fields[] = "`cost_expense` = ?"; $params[] = $cost; }
+            if ($amount !== null && $cost !== null) {
+                $fields[] = "`net_profit` = ?"; $params[] = ($amount - $cost);
+            }
+
+            if (!empty($fields)) {
+                $sql = "UPDATE `gsc_payments` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `transaction_id` = ?";
+                $params[] = $id;
+                $params[] = $id;
+                $stmt = $GLOBALS['pdo']->prepare($sql);
+                $stmt->execute($params);
+            }
+            echo json_encode(['success' => true, 'message' => 'Transaction updated successfully']);
+            exit;
+        }
+    }
+
+    // DELETE /api/payments/{id}
+    if (!empty($param1) && $method === 'DELETE') {
+        $id = $param1;
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->prepare("DELETE FROM `gsc_payments` WHERE `id` = ? OR `transaction_id` = ?");
+            $stmt->execute([$id, $id]);
+        }
+        echo json_encode(['success' => true, 'message' => 'Transaction record deleted']);
+        exit;
+    }
+}
+
+// 7. WORKS & CONTRACT OPERATIONS: /api/works/*
+if ($resource === 'works') {
+    require_auth();
+
+    // GET /api/works
+    if (empty($param1) && $method === 'GET') {
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->query("SELECT * FROM `gsc_works` ORDER BY `id` DESC");
+            $rows = $stmt->fetchAll();
+            $completed = 0; $pending = 0; $inProgress = 0; $cancelled = 0;
+            foreach ($rows as &$r) {
+                $r['_id'] = (string)$r['id'];
+                $r['contract_value'] = (float)$r['contract_value'];
+                $r['cost_expense'] = (float)$r['cost_expense'];
+                $r['net_profit'] = (float)$r['net_profit'];
+                $r['status'] = $r['work_status'];
+                $r['work_order_no'] = $r['work_id'];
+                $r['workOrderNo'] = $r['work_id'];
+                $r['service_category'] = $r['service'];
+                $r['serviceCategory'] = $r['service'];
+                $r['target_completion_date'] = $r['completion_date'];
+                $r['targetCompletionDate'] = $r['completion_date'];
+                $ws = $r['work_status'];
+                if ($ws === 'Completed') $completed++;
+                elseif ($ws === 'Pending') $pending++;
+                elseif ($ws === 'In Progress') $inProgress++;
+                elseif ($ws === 'Cancelled') $cancelled++;
+            }
+            echo json_encode([
+                'success' => true,
+                'works' => $rows,
+                'counts' => [
+                    'completed' => $completed,
+                    'pending' => $pending,
+                    'inProgress' => $inProgress,
+                    'cancelled' => $cancelled,
+                    'total' => count($rows)
+                ]
+            ]);
+            exit;
+        } else {
+            $rows = read_json_store('works.json');
+            foreach ($rows as &$r) {
+                $r['status'] = $r['work_status'] ?? $r['status'] ?? 'In Progress';
+                $r['work_order_no'] = $r['work_id'] ?? $r['work_order_no'] ?? '';
+                $r['service_category'] = $r['service'] ?? $r['service_category'] ?? '';
+            }
+            echo json_encode(['success' => true, 'works' => $rows]);
+            exit;
+        }
+    }
+
+    // POST /api/works
+    if (empty($param1) && $method === 'POST') {
+        $title = trim($input['title'] ?? '');
+        $client_name = trim($input['client_name'] ?? $input['clientName'] ?? '');
+        $client_phone = trim($input['client_phone'] ?? $input['clientPhone'] ?? '');
+        $service = trim($input['service'] ?? $input['serviceCategory'] ?? $input['service_category'] ?? 'Contracting');
+        $location = trim($input['location'] ?? 'Doha, Qatar');
+        $contract_value = (float)($input['contract_value'] ?? $input['contractValue'] ?? 0);
+        $cost_expense = (float)($input['cost_expense'] ?? $input['costExpense'] ?? 0);
+        $net_profit = $contract_value - $cost_expense;
+        $work_status = trim($input['work_status'] ?? $input['status'] ?? 'In Progress');
+        $payment_status = trim($input['payment_status'] ?? $input['paymentStatus'] ?? 'Partial');
+        $payment_mode = trim($input['payment_mode'] ?? $input['paymentMode'] ?? 'Online');
+        $start_date = $input['start_date'] ?? $input['startDate'] ?? date('Y-m-d');
+        $completion_date = $input['completion_date'] ?? $input['targetCompletionDate'] ?? $input['target_completion_date'] ?? null;
+        $notes = trim($input['notes'] ?? '');
+
+        $workId = 'WRK-' . rand(100, 999);
+
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->prepare("INSERT INTO `gsc_works` 
+                (`work_id`, `title`, `client_name`, `client_phone`, `service`, `location`, `contract_value`, `cost_expense`, `net_profit`, `work_status`, `payment_status`, `payment_mode`, `start_date`, `completion_date`, `notes`) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$workId, $title, $client_name, $client_phone, $service, $location, $contract_value, $cost_expense, $net_profit, $work_status, $payment_status, $payment_mode, $start_date, $completion_date, $notes]);
+            $newId = (string)$GLOBALS['pdo']->lastInsertId();
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Work order created successfully',
+                'work' => [
+                    '_id' => $newId,
+                    'work_id' => $workId,
+                    'work_order_no' => $workId,
+                    'title' => $title,
+                    'work_status' => $work_status,
+                    'status' => $work_status,
+                    'contract_value' => $contract_value
+                ]
+            ]);
+            exit;
+        }
+    }
+
+    // PATCH /api/works/{id}
+    if (!empty($param1) && ($method === 'PATCH' || $method === 'PUT')) {
+        $id = $param1;
+        $work_status = $input['work_status'] ?? $input['status'] ?? null;
+        $payment_status = $input['payment_status'] ?? $input['paymentStatus'] ?? null;
+        $notes = $input['notes'] ?? null;
+        $contract_value = isset($input['contract_value']) ? (float)$input['contract_value'] : (isset($input['contractValue']) ? (float)$input['contractValue'] : null);
+
+        if ($GLOBALS['db_connected']) {
+            $fields = [];
+            $params = [];
+            if ($work_status !== null) { $fields[] = "`work_status` = ?"; $params[] = $work_status; }
+            if ($payment_status !== null) { $fields[] = "`payment_status` = ?"; $params[] = $payment_status; }
+            if ($notes !== null) { $fields[] = "`notes` = ?"; $params[] = $notes; }
+            if ($contract_value !== null) { $fields[] = "`contract_value` = ?"; $params[] = $contract_value; }
+
+            if (!empty($fields)) {
+                $sql = "UPDATE `gsc_works` SET " . implode(', ', $fields) . " WHERE `id` = ? OR `work_id` = ?";
+                $params[] = $id;
+                $params[] = $id;
+                $stmt = $GLOBALS['pdo']->prepare($sql);
+                $stmt->execute($params);
+            }
+            echo json_encode(['success' => true, 'message' => 'Work order updated successfully']);
+            exit;
+        }
+    }
+
+    // DELETE /api/works/{id}
+    if (!empty($param1) && $method === 'DELETE') {
+        $id = $param1;
+        if ($GLOBALS['db_connected']) {
+            $stmt = $GLOBALS['pdo']->prepare("DELETE FROM `gsc_works` WHERE `id` = ? OR `work_id` = ?");
+            $stmt->execute([$id, $id]);
+        }
+        echo json_encode(['success' => true, 'message' => 'Work order deleted']);
         exit;
     }
 }

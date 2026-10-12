@@ -65,16 +65,38 @@ function get_bearer_token() {
         $headers = trim($_SERVER['Authorization']);
     } else if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+    } else if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $headers = trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
     } else if (function_exists('apache_request_headers')) {
         $requestHeaders = apache_request_headers();
-        $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
-        if (isset($requestHeaders['Authorization'])) {
-            $headers = trim($requestHeaders['Authorization']);
+        if (is_array($requestHeaders)) {
+            foreach ($requestHeaders as $key => $value) {
+                if (strtolower($key) === 'authorization') {
+                    $headers = trim($value);
+                    break;
+                }
+            }
         }
     }
     
-    if (!empty($headers) && preg_match('/Bearer\s(\S+)/i', $headers, $matches)) {
+    if (!empty($headers) && preg_match('/Bearer\s+(\S+)/i', $headers, $matches)) {
         return $matches[1];
     }
+    if (!empty($headers) && !preg_match('/Bearer/i', $headers)) {
+        return $headers;
+    }
+
+    // Resilient fallback for shared hosting stripping Authorization header
+    if (!empty($_GET['token'])) {
+        return trim($_GET['token']);
+    }
+    $raw = file_get_contents('php://input');
+    if (!empty($raw)) {
+        $data = json_decode($raw, true);
+        if (!empty($data['token'])) {
+            return trim($data['token']);
+        }
+    }
+
     return null;
 }

@@ -1,74 +1,96 @@
 # 🚀 Genting Services & Contracting W.L.L. (GSC)
-## Deployment Guide for `gscqa.loveslife.biz` (InfinityFree / cPanel Server & MySQL Database)
+## Production Deployment Guide for `gscqa.loveslife.biz` (InfinityFree / cPanel & MySQL)
 
-This guide walks you through deploying the GSC web application and connecting it to your server MySQL database on **InfinityFree / loveslife.biz** via the web file manager (**filemanager.ai**).
+This guide walks you through deploying the GSC web application and connecting your MySQL database on **InfinityFree** for your domain **`gscqa.loveslife.biz`**.
 
 ---
 
 ### 📦 Pre-Packaged Deployment Archive
-Your ready-to-upload archive has already been created in this folder:
-📁 **`gsc-deployment-htdocs.zip`** *(6.7 MB - contains the compiled frontend, PHP REST API, Apache `.htaccess` rewrite rules, and database schema)*
+Your ready-to-upload archive has already been updated and packaged with your account credentials:
+📁 **`gsc-deployment-htdocs.zip`** *(6.7 MB)*
+- **Frontend**: Full compiled production React SPA (`index.html`, `assets/`, favicon, icons)
+- **Backend API**: PHP REST endpoints with JWT authentication and MySQL PDO engine
+- **Pre-Configured**: Pre-loaded with account username `if0_43086816` and password `Saah8080`
+- **One-Click Installer**: Web setup and connection diagnostic utility at `/api/setup.php`
+- **Fallback Resilience**: Auto-switches to local file storage if MySQL is offline
 
 ---
 
-### Step 1: Set Up MySQL Database on InfinityFree
-InfinityFree shared hosting uses MySQL (MariaDB).
+### 📋 Account & Connection Overview
+- **Domain**: `http://gscqa.loveslife.biz/`
+- **Account Username**: `if0_43086816`
+- **Account Password**: `Saah8080`
+- **Server Home Path**: `/home/vol15_1/infinityfree.com/if0_43086816`
+- **Target Folder in File Manager**: 
+  - If `gscqa.loveslife.biz` is your account's primary domain: `/htdocs/`
+  - If added as a subdomain/addon domain: `/gscqa.loveslife.biz/htdocs/`
 
+---
+
+### Step 1: Create Database in InfinityFree cPanel
 1. Log in to your **[InfinityFree Dashboard](https://dash.infinityfree.com/)**.
-2. Select your hosting account for `gscqa.loveslife.biz` and click **Control Panel (cPanel/vPanel)**.
-3. Under the **Databases** section, click **MySQL Databases**.
-4. In "Create New Database", enter a name like `gsc` and click **Create Database**.
-5. Note down your MySQL connection credentials displayed on that page:
-   - **MySQL Hostname**: *(e.g., `sql100.infinityfree.com` or similar)*
-   - **MySQL Database Name**: *(e.g., `if0_XXXXXX_gsc`)*
-   - **MySQL Username**: *(e.g., `if0_XXXXXX`)*
-   - **MySQL Password**: *(Your account / vPanel password)*
-
----
-
-### Step 2: Import Database Schema (phpMyAdmin)
-1. On the **MySQL Databases** page, click the **phpMyAdmin** link next to your newly created database.
-2. In phpMyAdmin, click the **Import** tab in the top navigation.
-3. Click **Choose File** and select:
-   `server-php/database.sql` (or `htdocs/api/database.sql`)
-4. Scroll to the bottom and click **Go** (or **Import**).
-5. All 4 tables (`gsc_users`, `gsc_quotes`, `gsc_contacts`, `gsc_projects`) along with default Qatar landmark projects and the admin login will be created automatically!
-
----
-
-### Step 3: Upload to File Manager (`filemanager.ai`)
-1. In your InfinityFree Dashboard or Control Panel, open **File Manager** (or go to `https://filemanager.ai/new3/index.php`).
-2. Navigate into the **`htdocs/`** directory.
-3. If there are default placeholder files (like `default2.html` or `index2.html`), delete them.
-4. Click the **Upload** button (or drag and drop) and upload:
-   👉 **`gsc-deployment-htdocs.zip`**
-5. Once uploaded, right-click `gsc-deployment-htdocs.zip` and select **Extract** (extract into `htdocs/`).
-6. You can now delete the `.zip` file from the server.
-
----
-
-### Step 4: Configure Database Connection (`config.php`)
-1. In File Manager, navigate to `htdocs/api/`.
-2. Right-click **`config.php`** and select **Edit**.
-3. Replace the placeholder values with your real InfinityFree MySQL credentials from Step 1:
-   ```php
-   define('DB_HOST', 'sql100.infinityfree.com'); // Your MySQL Hostname
-   define('DB_NAME', 'if0_XXXXXX_gsc');          // Your Database Name
-   define('DB_USER', 'if0_XXXXXX');              // Your MySQL Username
-   define('DB_PASS', 'your_password_here');      // Your Hosting Password
+2. Click on your account **`if0_43086816`**.
+3. Under **Database Details**, check and note your **MySQL Hostname**:
+   *(Example: `sql105.infinityfree.com`, `sql201.infinityfree.com`, `sql304.infinityfree.com` — each InfinityFree account has a specific SQL host)*.
+4. Click **Control Panel (cPanel/vPanel)** -> **MySQL Databases**.
+5. In **"Create New Database"**, enter:
    ```
-4. Click **Save** (disk icon).
-
-> 💡 **Built-in Resilience**: If the database is ever offline or credentials are not yet entered, the API automatically falls back to secure local file storage in `api/data/` so quote submissions never fail!
+   gsc
+   ```
+   Click **Create Database**.
+6. Your database name will be:
+   ```
+   if0_43086816_gsc
+   ```
+   *(Note: The system also auto-detects any database matching `if0_43086816_*`)*.
 
 ---
 
-### Step 5: Test Your Live Website
-Open your browser and visit:
-1. **Public Website**: `http://gscqa.loveslife.biz/`
-2. **Quotation Request**: Submit a test quotation at `http://gscqa.loveslife.biz/quote` (generates ticket `GSC-XXXXXX`).
-3. **Quotation Tracking**: Track your quote at `http://gscqa.loveslife.biz/track`.
-4. **Admin Portal**: Go to `http://gscqa.loveslife.biz/admin`
+### Step 2: Upload Deployment Package to File Manager
+1. In your InfinityFree Dashboard or Control Panel, open **File Manager** (or [filemanager.ai](https://filemanager.ai/new3/index.php)).
+2. Navigate into your web folder:
+   - Go inside **`htdocs/`** (or `gscqa.loveslife.biz/htdocs/`).
+3. If there is a default file like `default2.html` or `index2.html`, delete it.
+4. Click **Upload** and upload the zip file:
+   👉 **`gsc-deployment-htdocs.zip`**
+5. Right-click **`gsc-deployment-htdocs.zip`** and choose **Extract** (into `htdocs/`).
+6. You can delete the `.zip` file from the server after extracting.
+
+---
+
+### Step 3: Run One-Click Web Setup & Diagnostics
+Once uploaded, you don't even need to manually edit config files!
+
+1. Open your browser and go to:
+   👉 **`http://gscqa.loveslife.biz/api/setup.php`**
+2. The setup utility will show your current connection status:
+   - Enter your assigned **MySQL Hostname** (e.g. `sql105.infinityfree.com` from Step 1).
+   - Database name: `if0_43086816_gsc` (pre-filled).
+   - Username: `if0_43086816` (pre-filled).
+   - Password: `Saah8080` (pre-filled).
+3. Click **"⚡ Test & Save MySQL Connection"**.
+4. The system will:
+   - Connect to MySQL.
+   - Automatically initialize all 4 tables (`gsc_users`, `gsc_quotes`, `gsc_contacts`, `gsc_projects`).
+   - Automatically seed default Qatar landmark projects and administrator account.
+   - Automatically save the verified settings to `config.php`.
+
+*(Alternatively, if you prefer manual configuration: edit `htdocs/api/config.php` in File Manager and set `DB_HOST` to your MySQL Hostname).*
+
+---
+
+### Step 4: Verify Live Website & Admin Portal
+Visit your live website to confirm everything is operational:
+
+1. **Public Website**:
+   [http://gscqa.loveslife.biz/](http://gscqa.loveslife.biz/)
+2. **Quotation Request**:
+   [http://gscqa.loveslife.biz/quote](http://gscqa.loveslife.biz/quote) — Submit a test quote (generates ticket `GSC-XXXXXX`).
+3. **Track Quotation**:
+   [http://gscqa.loveslife.biz/track](http://gscqa.loveslife.biz/track) — Enter reference number to track status.
+4. **Admin Portal**:
+   [http://gscqa.loveslife.biz/admin](http://gscqa.loveslife.biz/admin)
    - **Email**: `admin@gsc-qatar.com`
    - **Password**: `admin123456`
-5. **System Health Status**: Check `http://gscqa.loveslife.biz/api/health` to confirm the database engine status is active.
+5. **API Health & Diagnostic JSON**:
+   [http://gscqa.loveslife.biz/api/health](http://gscqa.loveslife.biz/api/health)

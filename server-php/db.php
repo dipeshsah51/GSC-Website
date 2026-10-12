@@ -1,7 +1,8 @@
 <?php
 /**
+ * Genting Services & Contracting W.L.L. (Doha, Qatar)
  * Database connection & schema initialization handler
- * Supports MySQL via PDO with resilient local JSON fallback
+ * Supports MySQL (InfinityFree / cPanel / MariaDB) with resilient local JSON fallback
  */
 
 require_once __DIR__ . '/config.php';
@@ -16,21 +17,44 @@ if (!is_dir($data_dir)) {
     @mkdir($data_dir, 0755, true);
 }
 
-// Attempt PDO connection
+// Attempt PDO connection to MySQL
 try {
     $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
     $pdo = new PDO($dsn, DB_USER, DB_PASS, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_TIMEOUT => 4,
+        PDO::ATTR_TIMEOUT => 3,
     ]);
     $db_connected = true;
-    
-    // Auto-initialize tables if not existing
     init_database_schema($pdo);
 } catch (Exception $e) {
-    $db_connected = false;
-    $db_error = $e->getMessage();
+    // If database name was wrong, attempt connecting without dbname and discover account's databases
+    try {
+        $dsn_no_db = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";charset=utf8mb4";
+        $pdo_probe = new PDO($dsn_no_db, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_TIMEOUT => 3,
+        ]);
+        
+        $prefix = DB_USER . '_';
+        $stmt = $pdo_probe->query("SHOW DATABASES LIKE '{$prefix}%'");
+        $found_dbs = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        if (!empty($found_dbs)) {
+            $selected_db = $found_dbs[0];
+            $pdo_probe->exec("USE `$selected_db`");
+            $pdo = $pdo_probe;
+            $db_connected = true;
+            init_database_schema($pdo);
+        } else {
+            $db_connected = false;
+            $db_error = "Connected to MySQL host '" . DB_HOST . "', but no database with prefix '{$prefix}' was found. Please create one in cPanel -> MySQL Databases (e.g. named 'gsc').";
+        }
+    } catch (Exception $e2) {
+        $db_connected = false;
+        $db_error = $e->getMessage();
+    }
 }
 
 /**
@@ -99,6 +123,50 @@ function init_database_schema($pdo) {
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+    // 5. Payments & Accounting Table (Online & Offline Payments, Profit/Loss)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `gsc_payments` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `transaction_id` VARCHAR(50) NOT NULL UNIQUE,
+        `invoice_no` VARCHAR(50) NOT NULL,
+        `client_name` VARCHAR(150) NOT NULL,
+        `client_email` VARCHAR(150) DEFAULT '',
+        `client_phone` VARCHAR(50) DEFAULT '',
+        `service_type` VARCHAR(150) NOT NULL,
+        `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        `cost_expense` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        `net_profit` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        `payment_method` VARCHAR(100) NOT NULL,
+        `payment_type` VARCHAR(50) NOT NULL,
+        `payment_status` VARCHAR(50) NOT NULL DEFAULT 'Completed',
+        `work_status` VARCHAR(50) NOT NULL DEFAULT 'Completed',
+        `payment_date` DATE NOT NULL,
+        `notes` TEXT DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    // 6. Work Orders & Project Operations Table (Completed, Pending, Cancelled)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `gsc_works` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `work_id` VARCHAR(50) NOT NULL UNIQUE,
+        `title` VARCHAR(200) NOT NULL,
+        `client_name` VARCHAR(150) NOT NULL,
+        `client_phone` VARCHAR(50) DEFAULT '',
+        `service` VARCHAR(150) NOT NULL,
+        `location` VARCHAR(150) DEFAULT 'Doha, Qatar',
+        `contract_value` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        `cost_expense` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        `net_profit` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        `work_status` VARCHAR(50) NOT NULL DEFAULT 'In Progress',
+        `payment_status` VARCHAR(50) NOT NULL DEFAULT 'Pending',
+        `payment_mode` VARCHAR(50) DEFAULT 'Online',
+        `start_date` DATE DEFAULT NULL,
+        `completion_date` DATE DEFAULT NULL,
+        `notes` TEXT DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
     // Ensure Default Admin Exists
     $stmt = $pdo->prepare("SELECT id FROM `gsc_users` WHERE `email` = ?");
     $stmt->execute([DEFAULT_ADMIN_EMAIL]);
@@ -108,11 +176,12 @@ function init_database_schema($pdo) {
         $insert->execute(['GSC System Administrator', DEFAULT_ADMIN_EMAIL, $hash]);
     }
 
-    // Ensure Projects Exist
+    // Ensure Default Qatar Projects Exist
     $stmtCount = $pdo->query("SELECT COUNT(*) FROM `gsc_projects`");
     if ($stmtCount->fetchColumn() == 0) {
         seed_default_projects($pdo);
     }
+
 }
 
 function seed_default_projects($pdo) {

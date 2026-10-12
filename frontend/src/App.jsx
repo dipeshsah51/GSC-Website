@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
@@ -21,11 +22,14 @@ import CompanyTerms from "./pages/CompanyTerms";
 import AdminPortal from "./pages/AdminPortal";
 import NotFound from "./pages/NotFound";
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
+
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
-      <Header />
+      {!isAdmin && <Header />}
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -46,9 +50,19 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      <Footer />
-      <FloatingActions />
-    </BrowserRouter>
+      {!isAdmin && <Footer />}
+      {!isAdmin && <FloatingActions />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
